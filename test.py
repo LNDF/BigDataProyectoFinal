@@ -7,7 +7,7 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 # Leer los archivos CSV desde HDFS
-df = spark.read.option("header", "true").csv("hdfs:///datos/elecciones/*.csv")
+df = spark.read.option("header", "true").option("delimiter", ";").csv("hdfs:///datos/elecciones/*.csv")
 
 print("Datos cargados:")
 df.show()
