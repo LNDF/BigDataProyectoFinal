@@ -21,8 +21,7 @@ print("Número total de registros:")
 print(df.count())
 
 # Ejemplo de transformación
-cols = str(df.columns).split(";")
-if "EAJ-PNV" in cols:
+if "EAJ-PNV" in df.columns:
     print("Conteo de votos por candidato:")
     df.groupBy("EAJ-PNV").count().show()
 
