@@ -7,7 +7,7 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 # Ruta en HDFS donde están los datos procesados
-hdfs_dir = "hdfs:///datos/elecciones/"
+hdfs_dir = "hdfs:///datos/elecciones/dataset.csv"
 
 # Leer los datos desde HDFS
 print(f"Leyendo datos desde HDFS: {hdfs_dir}")

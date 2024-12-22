@@ -6,14 +6,20 @@ import subprocess
 # Directorio local donde están los CSV
 local_dir = "/home/ec2-user/BigDataProyectoFinal/data/"
 
-# Directorio temporal para guardar los CSV procesados
-temp_dir = "/home/ec2-user/BigDataProyectoFinal/temp/"
+# Archivo temporal para guardar el CSV combinado
+temp_combined_file = "/home/ec2-user/BigDataProyectoFinal/temp/dataset.csv"
 
-# Directorio en HDFS donde se subirán los CSV procesados
+# Directorio en HDFS donde se subirá el CSV combinado
 hdfs_dir = "hdfs:///datos/elecciones/"
+hdfs_file_path = f"{hdfs_dir}dataset.csv"
 
-# Crear el directorio temporal si no existe
-os.makedirs(temp_dir, exist_ok=True)
+# Crear una lista para almacenar los DataFrames procesados
+dataframes = []
+
+# Función para limpiar los nombres de las columnas
+def limpiar_nombres_columnas(df):
+    df.columns = [re.sub(r"[^a-zA-Z0-9_]", "_", col) for col in df.columns]
+    return df
 
 # Función para extraer el año del nombre del archivo
 def extraer_anio(nombre_archivo):
@@ -31,7 +37,11 @@ for file_name in os.listdir(local_dir):
         # Leer el archivo CSV con pandas
         df = pd.read_csv(file_path, delimiter=";", encoding="latin1")
         
+        # Limpiar los nombres de las columnas
+        df = limpiar_nombres_columnas(df)
+        
         # Reemplazar valores "NULL" explícitos con 0
+        df.replace("NULL", 0, inplace=True)
         df.fillna(0, inplace=True)
         
         # Extraer el año del nombre del archivo y añadir la columna "FECHA"
@@ -42,20 +52,22 @@ for file_name in os.listdir(local_dir):
             print(f"Advertencia: No se pudo extraer el año del archivo {file_name}.")
             continue
         
-        # Guardar el archivo procesado en el directorio temporal
-        processed_file_path = os.path.join(temp_dir, file_name)
-        df.to_csv(processed_file_path, index=False, sep=";", encoding="latin1")
-        print(f"Archivo procesado guardado temporalmente en: {processed_file_path}")
+        # Añadir el DataFrame a la lista
+        dataframes.append(df)
 
-# Subir los archivos procesados a HDFS
-subprocess.run(["hdfs", "dfs", "-mkdir", "-p", hdfs_dir])
-for file_name in os.listdir(temp_dir):
-    file_path = os.path.join(temp_dir, file_name)
-    print(f"Subiendo archivo a HDFS: {file_name}")
-    subprocess.run(["hdfs", "dfs", "-put", "-f", file_path, hdfs_dir])
+# Combinar todos los DataFrames en uno solo
+if dataframes:
+    combined_df = pd.concat(dataframes, ignore_index=True)
+    
+    # Guardar el archivo combinado temporalmente
+    combined_df.to_csv(temp_combined_file, index=False, sep=";", encoding="latin1")
+    print(f"Archivo combinado guardado temporalmente en: {temp_combined_file}")
 
-# Limpiar el directorio temporal
-for file_name in os.listdir(temp_dir):
-    os.remove(os.path.join(temp_dir, file_name))
-
-print("Todos los archivos procesados y subidos a HDFS.")
+    # Crear el directorio en HDFS si no existe
+    subprocess.run(["hdfs", "dfs", "-mkdir", "-p", hdfs_dir])
+    
+    # Subir el archivo combinado a HDFS
+    subprocess.run(["hdfs", "dfs", "-put", "-f", temp_combined_file, hdfs_file_path])
+    print(f"Archivo combinado subido a HDFS: {hdfs_file_path}")
+else:
+    print("No se encontraron archivos válidos para combinar.")
