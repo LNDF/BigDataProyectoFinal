@@ -2,28 +2,23 @@ from pyspark.sql import SparkSession
 
 # Crear la sesión de Spark
 spark = SparkSession.builder \
-    .appName("AnalisisElecciones") \
+    .appName("TestVerDatos2024") \
     .master("yarn") \
     .getOrCreate()
 
-# Leer los archivos CSV desde HDFS
-df = spark.read.option("header", "true").option("delimiter", ";").csv("hdfs:///datos/elecciones/*.csv")
+# Ruta en HDFS donde están los datos procesados
+hdfs_dir = "hdfs:///datos/elecciones/"
 
-print("Datos cargados:")
-df.show()
+# Leer los datos desde HDFS
+print(f"Leyendo datos desde HDFS: {hdfs_dir}")
+df = spark.read.option("header", "true") \
+    .option("delimiter", ";") \
+    .option("encoding", "latin1") \
+    .csv(hdfs_dir)
 
-# Mostrar el esquema de los datos
-print("Esquema de los datos:")
-df.printSchema()
+# Mostrar algunos datos
+print("Mostrando datos:")
+df.show(truncate=False)
 
-# Ejemplo de análisis: contar registros
-print("Número total de registros:")
-print(df.count())
-
-# Ejemplo de transformación
-if "EAJ-PNV" in df.columns:
-    print("Conteo de votos por candidato:")
-    df.groupBy("EAJ-PNV").count().show()
-
-# Finalizar sesión de Spark
+# Finalizar la sesión
 spark.stop()
