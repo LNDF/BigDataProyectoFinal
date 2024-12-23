@@ -32,7 +32,7 @@ partidos_invalidos = ["ABSTENCIONES", "CODMUN", "VOTOS", "CENSO", "VALIDOS", "VO
 partidos = [col_name for col_name in df.columns if col_name not in ["AMBITO", "FECHA", "TH"] + partidos_invalidos]
 
 # Normalizar nombres de municipios
-df = df.withColumn("AMBITO", trim(lower(col("AMBITO"))))
+df = df.withColumn("AMBITO", trim(col("AMBITO")))
 
 # Convertir las columnas de partidos a un array de structs (partido, votos)
 partidos_structs = array(*[struct(lit(party).alias("PARTIDO"), col(party).cast("integer").alias("VOTOS")) for party in partidos]).alias("PARTIDOS")
