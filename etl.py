@@ -60,6 +60,11 @@ if dataframes:
     combined_df = pd.concat(dataframes, ignore_index=True)
     
     # Guardar el archivo combinado temporalmente
+    try:
+        os.makedirs("/home/ec2-user/BigDataProyectoFinal/temp")
+    except FileExistsError:
+        pass
+
     combined_df.to_csv(temp_combined_file, index=False, sep=";", encoding="latin1")
     print(f"Archivo combinado guardado temporalmente en: {temp_combined_file}")
 
@@ -68,6 +73,7 @@ if dataframes:
     
     # Subir el archivo combinado a HDFS
     subprocess.run(["hdfs", "dfs", "-put", "-f", temp_combined_file, hdfs_file_path])
+    subprocess.run(["rm", "-rf", "/home/ec2-user/BigDataProyectoFinal/temp"])
     print(f"Archivo combinado subido a HDFS: {hdfs_file_path}")
 else:
     print("No se encontraron archivos válidos para combinar.")
