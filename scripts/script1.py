@@ -31,12 +31,12 @@ df = spark.read.option("header", "true") \
     .csv(data_dir)
 
 # Asegurarse de que las columnas relevantes sean numéricas
-df = df.withColumn("VOTANTES", col("VOTANTES").cast("integer")) \
+df = df.withColumn("VOTOS", col("VOTOS").cast("integer")) \
        .withColumn("CENSO", col("CENSO").cast("integer")) \
        .withColumn("FECHA", col("FECHA").cast("integer"))
 
 # Calcular la participación como porcentaje
-df = df.withColumn("PARTICIPACION", (col("VOTANTES") / col("CENSO")) * 100)
+df = df.withColumn("PARTICIPACION", (col("VOTOS") / col("CENSO")) * 100)
 
 # Filtrar los datos para los años entre 1994 y 2024
 data_filtered = df.filter((col("FECHA") >= 1994) & (col("FECHA") <= 2024))
@@ -45,7 +45,7 @@ data_filtered = df.filter((col("FECHA") >= 1994) & (col("FECHA") <= 2024))
 data_grouped = data_filtered.groupBy("TH", "FECHA").agg(spark_avg("PARTICIPACION").alias("PARTICIPACION"))
 
 # Almacenar los datos procesados en HDFS
-data_grouped.write.mode("overwrite").option("header", "true").csv(output_dir + "participacion_anual/")
+data_grouped.write.mode("overwrite").option("header", "true").csv(output_dir)
 
 # Mostrar una muestra de los datos procesados
 data_grouped.show(truncate=False)
