@@ -4,16 +4,25 @@
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, avg as spark_avg
+from dotenv import load_dotenv
+import os
+
+APP_NAME = "script1"
+
+load_dotenv()
+
+INPUT_DIR = str(os.getenv("DATA_DIR"))
+OUTPUT_DIR = str(os.getenv("OUTPUT_DIR"))
 
 # Crear la sesión de Spark
 spark = SparkSession.builder \
-    .appName("AnalisisParticipacion") \
+    .appName(APP_NAME) \
     .master("yarn") \
     .getOrCreate()
 
 # Ruta de entrada y salida
-data_dir = "hdfs:///datos/elecciones/dataset.csv"
-output_dir = "hdfs:///datos/script1/"
+data_dir = INPUT_DIR
+output_dir = f"{OUTPUT_DIR}/{APP_NAME}/"
 
 # Leer los datos desde HDFS
 df = spark.read.option("header", "true") \
