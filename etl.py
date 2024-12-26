@@ -28,6 +28,19 @@ def extraer_anio(nombre_archivo):
         return f"20{match.group(1)}" if int(match.group(1)) <= 50 else f"19{match.group(1)}"
     return None
 
+def uniformizar_provincia(th):
+    if isinstance(th, str):
+        th = th.strip().upper()
+        th = re.sub(r"[?¿ï¿½]", "", th)
+        if "GIPUZKOA" in th:
+            return "GIPUZKOA"
+        elif "BIZKAIA" in th:
+            return "BIZKAIA"
+        elif "ARABA" in th or "ÁLAVA" in th or "ALAVA" in th or "LAVA" in th:
+            return "ARABA-ÁLAVA"
+    return th
+
+
 # Procesar cada archivo CSV en el directorio local
 for file_name in os.listdir(local_dir):
     if file_name.endswith(".csv"):
@@ -51,6 +64,10 @@ for file_name in os.listdir(local_dir):
         else:
             print(f"Advertencia: No se pudo extraer el año del archivo {file_name}.")
             continue
+        
+        # Uniformizar los nombres de las provincias (TH)
+        if "TH" in df.columns:
+            df["TH"] = df["TH"].apply(uniformizar_provincia)
         
         # Añadir el DataFrame a la lista
         dataframes.append(df)

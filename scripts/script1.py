@@ -3,7 +3,7 @@
 # a lo largo de los años y proporciona una visión completa de los cambios más significativos.
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, avg as spark_avg
+from pyspark.sql.functions import col, avg as spark_avg, format_number
 from dotenv import load_dotenv
 import os
 
@@ -44,8 +44,14 @@ data_filtered = df.filter((col("FECHA") >= 1994) & (col("FECHA") <= 2024))
 # Calcular la participación promedio por provincia (TH) y año
 data_grouped = data_filtered.groupBy("TH", "FECHA").agg(spark_avg("PARTICIPACION").alias("PARTICIPACION"))
 
+# Ajustar el formato de PARTICIPACION para asegurar compatibilidad con Power BI
+data_grouped = data_grouped.withColumn("PARTICIPACION", format_number(col("PARTICIPACION"), 2))
+
 # Almacenar los datos procesados en HDFS
-data_grouped.write.mode("overwrite").option("header", "true").csv(output_dir)
+data_grouped.write.mode("overwrite") \
+    .option("header", "true") \
+    .option("delimiter", ",") \
+    .csv(output_dir)
 
 # Mostrar una muestra de los datos procesados
 data_grouped.show(truncate=False)
