@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, sum as spark_sum, round
+from pyspark.sql.functions import col, sum as spark_sum, round, regexp_replace, format_number
 from dotenv import load_dotenv
 import os
 
@@ -38,20 +38,23 @@ df_aggregated = df.groupBy("AMBITO", "FECHA").agg(
     spark_sum("ABSTENCION").alias("TOTAL_ABSTENCION"),
     spark_sum("VOTOS").alias("TOTAL_VOTOS")
 )
+df_aggregated = df_aggregated.withColumn("TOTAL_VOTOS", col("TOTAL_VOTOS").cast("integer"))
 
 # Recalcular el porcentaje de abstención a nivel de municipio y año
 df_aggregated = df_aggregated.withColumn(
-    "PORCENTAJE_ABSTENCION",
-    round((col("TOTAL_ABSTENCION") / col("TOTAL_VOTOS")) * 100, 2)
+    "PORCENTAJE_ABSTENCION", round((col("TOTAL_ABSTENCION") / col("TOTAL_VOTOS")) * 100, 2)
 )
+df_aggregated = df_aggregated.withColumn("PORCENTAJE_ABSTENCION", regexp_replace(col("PORCENTAJE_ABSTENCION"), "\\.", ","))
 
 # Guardar los resultados en HDFS
-df_aggregated.write.mode("overwrite").option("header", "true").csv(output_dir)
+df_aggregated.write.mode("overwrite") \
+    .option("header", "true") \
+    .option("delimiter", ";") \
+    .option("encoding", "latin1") \
+    .csv(output_dir)
 
 # Mostrar una muestra de los datos procesados
 df_aggregated.show(truncate=False)
-print(df_aggregated.count())
-df_aggregated.filter(col("AMBITO") == "GETXO").show(truncate=False)
 
 # Finalizar sesión
 spark.stop()

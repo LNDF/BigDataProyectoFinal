@@ -3,7 +3,7 @@
 # a lo largo de los años y proporciona una visión completa de los cambios más significativos.
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, avg as spark_avg, format_number
+from pyspark.sql.functions import col, avg as spark_avg, format_number, regexp_replace
 from dotenv import load_dotenv
 import os
 
@@ -46,11 +46,13 @@ data_grouped = data_filtered.groupBy("TH", "FECHA").agg(spark_avg("PARTICIPACION
 
 # Ajustar el formato de PARTICIPACION para asegurar compatibilidad con Power BI
 data_grouped = data_grouped.withColumn("PARTICIPACION", format_number(col("PARTICIPACION"), 2))
+data_grouped = data_grouped.withColumn("PARTICIPACION", regexp_replace(col("PARTICIPACION"), "\\.", ","))
 
 # Almacenar los datos procesados en HDFS
 data_grouped.write.mode("overwrite") \
     .option("header", "true") \
-    .option("delimiter", ",") \
+    .option("delimiter", ";") \
+    .option("encoding", "latin1") \
     .csv(output_dir)
 
 # Mostrar una muestra de los datos procesados
