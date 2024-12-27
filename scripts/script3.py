@@ -34,7 +34,7 @@ df = df.withColumn("CENSO", col("CENSO").cast("integer")) \
 df = df.withColumn("PORCENTAJE_ABSTENCION", round((col("ABSTENCION") / col("VOTOS")) * 100, 2))
 
 # Sumar los valores de abstención y censo por municipio y año
-df_aggregated = df.groupBy("AMBITO", "FECHA").agg(
+df_aggregated = df.groupBy("TH", "AMBITO", "FECHA").agg(
     spark_sum("ABSTENCION").alias("TOTAL_ABSTENCION"),
     spark_sum("VOTOS").alias("TOTAL_VOTOS")
 )
