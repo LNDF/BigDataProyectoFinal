@@ -26,6 +26,5 @@ df = spark.read.option("header", "true") \
     .option("encoding", "latin1") \
     .csv(data_dir)
 
-
 # CODE FROM HERE
 # THE DATAFRAME df MUST BE USED TO SOLVE THE EXERCISE

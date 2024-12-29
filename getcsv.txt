@@ -1,0 +1,1 @@
+hdfs dfs -get /datos/script3  ./script3.csv
