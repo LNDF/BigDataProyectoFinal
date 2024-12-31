@@ -1,3 +1,5 @@
+# ¿Cómo varió el porcentaje de votos en blanco y nulos entre 1994 y 2024?
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, sum as spark_sum, round, lag
 from pyspark.sql.window import Window

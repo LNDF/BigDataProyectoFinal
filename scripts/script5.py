@@ -1,3 +1,5 @@
+# ¿Qué municipios mostraron una tendencia constante de apoyo al mismo partido ganador entre 1994 y 2024?
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, when, lit, array, struct, expr, countDistinct, collect_set
 from dotenv import load_dotenv
