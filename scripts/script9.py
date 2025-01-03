@@ -67,7 +67,11 @@ result.write.mode("overwrite") \
     .csv(output_dir)
 
 # Mostrar una muestra de los datos procesados
-result.show(20, truncate=False)
+result.show(truncate=False)
 
 # Finalizar sesión
 spark.stop()
+
+result.columns
+
+

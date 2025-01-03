@@ -1,1 +1,1 @@
-hdfs dfs -get /datos/script3  ./script3.csv
+hdfs dfs -get /datos/script9  ./script9.csv
