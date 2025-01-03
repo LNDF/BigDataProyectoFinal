@@ -1,10 +1,9 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, stddev, coalesce, regexp_replace, format_number
-from pyspark.sql.window import Window
+from pyspark.sql.functions import col, coalesce, stddev, format_number, regexp_replace
 from dotenv import load_dotenv
 import os
 
-APP_NAME = "script9"
+APP_NAME = "script8"
 
 load_dotenv()
 
@@ -30,53 +29,45 @@ df = spark.read.option("header", "true") \
 # Unificar las columnas de EAJ_PNV y EAJ_PNV___EA
 df = df.withColumn("EAJ_PNV_UNIFICADO", coalesce(col("EAJ_PNV"), col("EAJ_PNV___EA")))
 
-# Filtrar los datos solo para el año 2024
-df_2024 = df.filter(col('FECHA') == 2024)
-
-# Identificar columnas con solo valores null en el DataFrame filtrado
-columns_to_drop = [column for column in df_2024.columns if df_2024.select(column).distinct().count() == 1 and df_2024.select(column).first()[0] is None]
-
-# Eliminar estas columnas
-df_2024 = df_2024.drop(*columns_to_drop)
-
 # Definir las columnas que no corresponden a partidos
 no_partidos = ["TH", "CODMUN", "AMBITO", "DISTRITO", "SECCION", "MESA", "CENSO", "VOTOS", "NULOS", "VALIDOS", "BLANCOS", "VOTOS_CANDIDATOS", "ABSTENCION", "FECHA", "EAJ_PNV", "EAJ_PNV___EA"]
 
 # Obtener todas las columnas que podrían ser de partidos
-partidos = [col_name for col_name in df_2024.columns if col_name not in no_partidos]
+partidos = [col_name for col_name in df.columns if col_name not in no_partidos]
 
 # Verificar que todas las columnas sean numéricas
 for partido in partidos:
-    df_2024 = df_2024.withColumn(partido, col(partido).cast("double"))
+    df = df.withColumn(partido, col(partido).cast("integer"))
 
-# Calculamos la desviación estándar de cada partido para cada municipio (AMBITO)
-desviaciones = {}
-for partido in partidos:
-    desviaciones[partido] = stddev(partido).over(Window.partitionBy('AMBITO'))
-
-# Agregamos las desviaciones estándar de cada partido al DataFrame
-df_2024_con_desviaciones = df_2024.select(
-    'AMBITO',
-    *[desviaciones[partido].alias(f'desviacion_{partido}') for partido in partidos]
+# Calcular la desviación estándar por municipio y fecha
+result = (
+    df.groupBy("AMBITO", "FECHA")
+    .agg(
+        *[
+            format_number(stddev(col(partido)), 2).alias(f"STD_{partido}")
+            for partido in partidos  # Calcular y formatear a 2 decimales
+        ],
+    )
 )
 
-# Redondear a 2 decimales y reemplazar puntos por comas
-for partido in partidos:
-    columna_desviacion = f"desviacion_{partido}"
-    df_2024_con_desviaciones = df_2024_con_desviaciones.withColumn(
-        columna_desviacion,
-        regexp_replace(format_number(col(columna_desviacion), 2), r'\.', ',')
-    )
+# Reemplazar puntos por comas en los resultados
+result = result.select(
+    *[
+        regexp_replace(col(c).cast("string"), r'\.', ',').alias(c)
+        if c.startswith("STD_") else col(c)
+        for c in result.columns
+    ]
+)
 
 # Guardar los resultados en HDFS
-df_2024_con_desviaciones.write.mode("overwrite") \
+result.write.mode("overwrite") \
     .option("header", "true") \
     .option("delimiter", ";") \
     .option("encoding", "latin1") \
     .csv(output_dir)
 
 # Mostrar una muestra de los datos procesados
-df_2024_con_desviaciones.show(20,truncate=False)
+result.show(20, truncate=False)
 
 # Finalizar sesión
 spark.stop()
